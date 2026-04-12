@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-html
+data:
+  index.html: |
+    <html>
+      <head><title>ITMO</title></head>
+      <body>
+        <h1>ITMO Kubernetes server's there for you :)</h1>
+      </body>
+    </html>
