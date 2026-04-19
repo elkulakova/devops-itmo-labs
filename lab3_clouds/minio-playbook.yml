@@ -1,0 +1,79 @@
+- name: Install MinIO
+  hosts: minio
+  become: yes
+
+  vars:
+    minio_user: minio
+    minio_group: minio
+    minio_cnfg_dir: /opt/minio
+    minio_data_dir: /mnt/minio
+    minio_binary_path: /usr/local/bin/minio
+    minio_url: https://dl.min.io/server/minio/release/linux-amd64/minio
+    minio_port: 9000
+    minio_console_port: 9001
+
+  tasks:
+
+    - name: Install dependencies
+      apt:
+        name:
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Create minio group
+      group:
+        name: "{{ minio_group }}"
+        system: yes
+
+    - name: Create minio user
+      user:
+        name: "{{ minio_user }}"
+        system: yes
+        group: "{{ minio_group }}"
+        shell: /usr/sbin/nologin
+        create_home: no
+
+    - name: Create directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ minio_user }}"
+        group: "{{ minio_group }}"
+        mode: "0755"
+      loop:
+        - "{{ minio_cnfg_dir }}"
+        - "{{ minio_data_dir }}"
+
+    - name: Download MinIO binary
+      get_url:
+        url: "{{ minio_url }}"
+        dest: "{{ minio_binary_path }}"
+        mode: "0755"
+
+    - name: Create systemd service
+      copy:
+        dest: /etc/systemd/system/minio.service
+        content: |
+          [Unit]
+          Description=MinIO
+          After=network.target
+
+          [Service]
+          User={{ minio_user }}
+          Group={{ minio_group }}
+          ExecStart={{ minio_binary_path }} server --address ":{{ minio_port }}" --console-address ":{{ minio_console_port }}" {{ minio_data_dir }}
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: Enable and start MinIO
+      systemd:
+        name: minio
+        enabled: yes
+        state: started
