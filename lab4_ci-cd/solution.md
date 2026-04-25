@@ -12,7 +12,7 @@ name: CI/CD for DevOps Lab4
 
 on:
   push:
-    branches: [ main ] # 1. Хардкод имени ветки + 2. Не указано, что триггерится только при изменении недокументационных файлов в папке проекта
+    branches: [ main ] # 1. Хардкод имени ветки (тут неизбежен, к сожалению, как выяснилось) + 2. Не указано, что триггерится только при изменении недокументационных файлов в папке проекта
   pull_request:
     branches: [ main ]
 
@@ -119,13 +119,13 @@ name: CI/CD for DevOps Lab4
 
 on:
   push:
-    branches: [ ${{ github.event.repository.default_branch }} ] # 1. Использование переменной для определения ветки
+    branches: [ main ]
     paths: # 2. Ограничение на триггеринг только при изменении недокуменционных файлов в папке проекта
       - 'lab4_ci-cd/**'
     paths-ignore:
       - '**.md'
   pull_request:
-    branches: [ ${{ github.event.repository.default_branch }} ]
+    branches: [ main ]
 
 jobs:
   lint:
