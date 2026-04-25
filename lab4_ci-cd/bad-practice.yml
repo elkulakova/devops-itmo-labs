@@ -70,7 +70,7 @@ jobs:
           python-version: '3.12'
       - name: Security Scan (Bandit)
         run: |
-          pip install bandit # 3. Не указывать конкретную версию библиотеки
+          pip install pbr bandit # 3. Не указывать конкретную версию библиотеки
           bandit -r built-app
     timeout-minutes: 10
 
@@ -82,6 +82,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: python-app
+          path: built-app
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:

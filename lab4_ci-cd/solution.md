@@ -211,6 +211,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: python-app
+          path: built-app
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
