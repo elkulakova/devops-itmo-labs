@@ -92,18 +92,26 @@ jobs:
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
         with:
           name: python-app
           path: built-app
-      - name: Debug
-        run: ls -R built-app
-      - name: Show final structure
-        run: find built-app
-      # Integration with Vault would go here (Part 2 of your Lab)
+      - name: Import Secrets from Vault
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ secrets.VAULT_URL }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          # Path: secret/data/lab4 (as created in Vault)
+          # Key: DEPLOY_TOKEN 
+          # Output variable: GITHUB_TOKEN (will be available in env)
+          secrets: |
+            secret/data/lab4 DEPLOY_TOKEN | GITHUB_TOKEN ;
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Now we use the token fetched from Vault!
+          github_token: ${{ env.GITHUB_TOKEN }}
           publish_dir: ./built-app
     timeout-minutes: 10
