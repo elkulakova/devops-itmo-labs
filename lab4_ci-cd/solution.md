@@ -122,10 +122,12 @@ on:
     branches: [ main ]
     paths: # 2. Ограничение на триггеринг только при изменении недокуменционных файлов в папке проекта
       - 'lab4_ci-cd/**'
-    paths-ignore:
-      - '**.md'
+      - '!lab4_ci-cd/**.md' # Восклицательный знак исключает md файлы внутри папки
   pull_request:
     branches: [ main ]
+    paths:
+      - 'lab4_ci-cd/**'
+      - '!lab4_ci-cd/**.md'
 
 jobs:
   lint:

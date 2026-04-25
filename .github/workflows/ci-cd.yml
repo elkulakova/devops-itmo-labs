@@ -5,14 +5,16 @@ on:
     branches: [ main ]
     paths:
       - 'lab4_ci-cd/**'
-    paths-ignore:
-      - '**.md'
+      - '!lab4_ci-cd/**.md'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'lab4_ci-cd/**'
+      - '!lab4_ci-cd/**.md'
 
 jobs:
   lint:
-    runs-on: ubuntu-22.04 # Specific version (not latest/noble)
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
