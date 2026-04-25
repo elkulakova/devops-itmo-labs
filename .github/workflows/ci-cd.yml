@@ -60,6 +60,7 @@ jobs:
         run: |
           mkdir built-app
           rsync -av --exclude='.git' lab4_ci-cd/ built-app/
+          ls -R built-app
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -95,6 +96,10 @@ jobs:
         with:
           name: python-app
           path: built-app
+      - name: Debug
+        run: ls -R built-app
+      - name: Show final structure
+        run: find built-app
       # Integration with Vault would go here (Part 2 of your Lab)
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
