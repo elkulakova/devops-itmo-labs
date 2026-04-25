@@ -1,0 +1,90 @@
+name: CI/CD for DevOps Lab4
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Lint with flake8
+        working-directory: lab4_ci-cd
+        run: |
+          pip install flake8 # 3. Не указывать конкретную версию библиотеки
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    timeout-minutes: 10
+  
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Dependencies
+        working-directory: lab4_ci-cd
+        run: pip install -r requirements.txt
+      - name: Run Tests
+        working-directory: lab4_ci-cd
+        run: python test.py
+    timeout-minutes: 10
+  
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - name: Build Artifact
+        run: |
+          mkdir built-app
+          rsync -av --exclude='.git' lab4_ci-cd/ built-app/
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-app
+          path: ./built-app
+    timeout-minutes: 10
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-app
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Security Scan (Bandit)
+        run: |
+          pip install bandit # 3. Не указывать конкретную версию библиотеки
+          bandit -r built-app
+    timeout-minutes: 10
+
+  deploy:
+    environment: production
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-app
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: "top-Secret-token"
+          publish_dir: ./built-app
+    timeout-minutes: 10
