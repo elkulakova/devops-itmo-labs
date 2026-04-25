@@ -80,7 +80,7 @@ jobs:
           python-version: '3.12' # 5. Отсутствие кеширования
       - name: Security Scan (Bandit)
         run: |
-          pip install bandit # 3. Не указывать конкретную версию библиотеки
+          pip install pbr bandit # 3. Не указывать конкретную версию библиотеки
           bandit -r built-app
     timeout-minutes: 10
 
@@ -198,7 +198,7 @@ jobs:
           cache: 'pip'
       - name: Security Scan (Bandit)
         run: |
-          pip install bandit==1.7.5
+          pip install pbr==6.1.1 bandit==1.7.5
           bandit -r built-app
     timeout-minutes: 10
 
