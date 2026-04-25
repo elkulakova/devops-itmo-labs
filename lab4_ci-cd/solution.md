@@ -12,26 +12,26 @@ name: CI/CD for DevOps Lab4
 
 on:
   push:
-    branches: [ main ] # 1. Хардкод имени ветки (тут неизбежен, к сожалению, как выяснилось) + 2. Не указано, что триггерится только при изменении недокументационных файлов в папке проекта
+    branches: [ main ] # 1. Хардкод ветки, что снижает гибкость (здесь оказалось по-другому никак и не написать :() + 2. Отсутствие ограничения на триггеринг pipeline только при изменении файлов проекта
   pull_request:
     branches: [ main ]
 
 jobs:
   lint:
-    runs-on: ubuntu-latest # 3. Не указывать конкретную версию ОС, а использовать latest
+    runs-on: ubuntu-latest # 3. Использование latest версии ОС
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.12' # 5. Отсутствие кэширования зависимостей
       - name: Lint with flake8
         working-directory: lab4_ci-cd
         run: |
           pip install flake8 # 3. Не указывать конкретную версию библиотеки
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
     timeout-minutes: 10
-          
+  
   test:
     runs-on: ubuntu-latest
     steps:
@@ -47,8 +47,8 @@ jobs:
         working-directory: lab4_ci-cd
         run: python test.py
     timeout-minutes: 10
-        
-  build: # 4. Отсутствие явных dependencies между job-ами
+  
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,11 +56,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
       - name: Build Artifact
         run: |
           mkdir built-app
           rsync -av --exclude='.git' lab4_ci-cd/ built-app/
+          ls -R built-app
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -77,7 +77,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12' # 5. Отсутствие кеширования
+          python-version: '3.12'
       - name: Security Scan (Bandit)
         run: |
           pip install pbr bandit # 3. Не указывать конкретную версию библиотеки
@@ -86,16 +86,21 @@ jobs:
 
   deploy:
     environment: production
-    if: github.ref == 'refs/heads/main' # 1. Хардкод имени ветки
+    if: github.ref == 'refs/heads/main' # 1. Хардкод ветки, что снижает гибкость
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: python-app
+          path: built-app
+      - name: Debug
+        run: ls -R built-app
+      - name: Show final structure
+        run: find built-app
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: "top-Secret-token" # 6. Хардкод токенов в файлах
+          github_token: "top-Secret-token" # 6. Хардкод токена, что снижает безопасность
           publish_dir: ./built-app
     timeout-minutes: 10
 ```
@@ -120,9 +125,9 @@ name: CI/CD for DevOps Lab4
 on:
   push:
     branches: [ main ]
-    paths: # 2. Ограничение на триггеринг только при изменении недокуменционных файлов в папке проекта
-      - 'lab4_ci-cd/**'
-      - '!lab4_ci-cd/**.md' # Восклицательный знак исключает md файлы внутри папки
+    paths:
+      - 'lab4_ci-cd/**' # 2. Ограничение на триггеринг pipeline только при изменении файлов проекта
+      - '!lab4_ci-cd/**.md'
   pull_request:
     branches: [ main ]
     paths:
@@ -131,18 +136,18 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-22.04 # 3. Указание конкретной версии ОС для стабильности окружения
+    runs-on: ubuntu-22.04 # 3. Указание конкретной версии ОС
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip' # 5. Включение кэширования для ускорения установки зависимостей
+          cache: 'pip' # 5. Включение кэширования для зависимостей
       - name: Lint with flake8
         working-directory: lab4_ci-cd
         run: |
-          pip install flake8==7.0.0 # 3. Указание конкретной версии библиотеки для стабильности
+          pip install flake8==7.0.0 # 3. Указание конкретной версии библиотеки
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
     timeout-minutes: 10
           
@@ -164,7 +169,7 @@ jobs:
     timeout-minutes: 10
         
   build:
-    needs: [lint, test] # 4. Явное указание зависимостей между job-ами для правильного порядка выполнения
+    needs: [lint, test] # 4. Явное указание зависимостей между job-ами
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -177,6 +182,7 @@ jobs:
         run: |
           mkdir built-app
           rsync -av --exclude='.git' lab4_ci-cd/ built-app/
+          ls -R built-app
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -212,11 +218,15 @@ jobs:
         with:
           name: python-app
           path: built-app
+      - name: Debug
+        run: ls -R built-app
+      - name: Show final structure
+        run: find built-app
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }} # 6. Использование встроенных секретов GitHub для безопасности
-          publish_dir: built-app
+          github_token: ${{ secrets.GITHUB_TOKEN }} # 6. Использование встроенных секретов GitHub для токенов
+          publish_dir: ./built-app
     timeout-minutes: 10
 ```
 
@@ -229,6 +239,18 @@ jobs:
 - включение кэширования для зависимостей значительно ускоряет выполнение pipeline, особенно для больших проектов, что улучшает производительность;
 - использование встроенных секретов `GitHub` для токенов повышает безопасность, так как исключает риск утечки токенов через код и позволяет управлять доступом к секретам через интерфейс `GitHub`.
 
-Попробуем запустить этот pipeline и убедиться, что он работает корректно. Если все этапы выполняются успешно, то мы можем быть уверены, что наш CI/CD процесс настроен правильно и эффективно:
+Попробуем запустить этот pipeline и убедиться, что он работает корректно. В настройках репозитория способ деплоя выбираем `Deploy from a branch`, вписываем в название ветки `gh-pages`, так как по файлу все будет деплоиться именно в новую ветку с таким названием:
+
+![img_3.png](img_3.png)
+
+Теперь запушу изменения в репозиторий. Если все этапы выполняются успешно, то мы можем быть уверены, что наш CI/CD процесс настроен правильно и эффективно:
 
 ![img.png](img.png)
+
+![img_2.png](img_2.png)
+
+Все стадии пройдены успешно, что подтверждает правильность настроек и исправлений в CI/CD файле. Теперь мы можем быть уверены, что наш процесс сборки, тестирования и деплоя работает стабильно, безопасно и эффективно.
+
+А вот и сайт!
+
+![img_1.png](img_1.png)
