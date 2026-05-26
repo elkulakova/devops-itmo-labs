@@ -1,0 +1,32 @@
+alertmanager:
+  enabled: true
+  config:
+    global:
+      resolve_timeout: 1m
+      smtp_smarthost: 'smtp.yandex.ru:587'
+      smtp_from: 'lizakulakova2016.ru@yandex.ru'
+      smtp_auth_username: 'lizakulakova2016.ru@yandex.ru'
+      smtp_auth_password: 'ohpcwcctycwqxkpi'
+      smtp_require_tls: true
+
+    route:
+      receiver: 'email-alert'
+      group_by: ['alertname']
+      group_wait: 5s
+      group_interval: 10s
+      repeat_interval: 5m
+      routes: []
+
+    receivers:
+      - name: 'email-alert'
+        email_configs:
+          - to: 'lizakulakova2016.ru@yandex.ru'
+            send_resolved: true
+            headers:
+              Subject: '🚨 Alert: {{ .CommonLabels.alertname }}'
+
+    # Явно задаём inhibit_rules, чтобы не тянулись дефолтные
+    inhibit_rules:
+      - source_matchers: ['severity="critical"']
+        target_matchers: ['severity=~"warning|info"']
+        equal: ['namespace', 'alertname']

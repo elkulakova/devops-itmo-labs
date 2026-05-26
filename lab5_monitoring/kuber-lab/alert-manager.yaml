@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: my-release-health-alert
+  labels:
+    release: monitor
+spec:
+  groups:
+  - name: service-availability
+    rules:
+    - alert: ServiceDown
+      # Проверяем, что у деплоймента my-release нет доступных реплик
+      expr: kube_deployment_status_replicas_available{deployment="my-release"} < 1
+      for: 30s
+      labels:
+        severity: critical
+      annotations:
+        summary: "Сервис my-release недоступен"
+        description: >
+          Деплоймент my-release имеет 0 доступных реплик.
+          Сервис полностью остановлен. Требуется немедленное вмешательство.
